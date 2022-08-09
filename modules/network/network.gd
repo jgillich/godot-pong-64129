@@ -51,18 +51,18 @@ func create_player(id : int):
 		# Set the name, so players can figure out their local authority
 		east_player_scene.name = str(id)
 
-		east_player_scene.get_node('Networking').sync_position = Vector2(50, 200)
+		east_player_scene.sync_position = Vector2(50, 200)
 
 		$Players.add_child(east_player_scene)
 
 		print('network create_player we have set position to %s' % str(east_player_scene.position))
-		print('network create_player we have set sync_position to %s ' % str(east_player_scene.get_node('Networking').sync_position))
+		print('network create_player we have set sync_position to %s ' % str(east_player_scene.sync_position))
 
 		players.append(id)
 	elif len(players) == 1:
 		print('network create_player creating new western Player with ID %d' % id)
 		var west_player_scene = player_scene.instantiate()
-		west_player_scene.get_node('Networking').sync_position = Vector2(400, 200)
+		west_player_scene.sync_position = Vector2(400, 200)
 
 		# Set the name, so players can figure out their local authority
 		west_player_scene.name = str(id)
