@@ -1,0 +1,1 @@
+"G:\Desktop\godot\Godot_v4.0-alpha13_win64\Godot_v4.0-alpha13_win64.exe" --path "G:\Code\godot-projects\pong"

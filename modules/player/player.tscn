@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://cxtvoiud1dgt0"]
+
+[ext_resource type="Script" path="res://modules/player/player.gd" id="1_pra7j"]
+[ext_resource type="Texture2D" uid="uid://pc7p76btru52" path="res://modules/player/left_pallete.png" id="2_bajg0"]
+[ext_resource type="Script" path="res://modules/player/player_networking.gd" id="3_mw5oa"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_lu2ia"]
+radius = 4.0
+height = 32.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_iokmp"]
+properties/0/path = NodePath(".:sync_position")
+properties/0/spawn = true
+properties/0/sync = true
+
+[node name="Player" type="Area2D"]
+position = Vector2(50, 200)
+collision_mask = 14
+script = ExtResource("1_pra7j")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_bajg0")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_lu2ia")
+
+[node name="Networking" type="Node" parent="."]
+script = ExtResource("3_mw5oa")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Networking"]
+replication_config = SubResource("SceneReplicationConfig_iokmp")

@@ -1,0 +1,93 @@
+[gd_scene load_steps=6 format=3 uid="uid://dii81fu2gwpxu"]
+
+[ext_resource type="Texture2D" uid="uid://dqm7hcon58bfk" path="res://modules/ball/ball.png" id="2_m40wo"]
+[ext_resource type="Script" path="res://modules/ball/ball_networking.gd" id="3_uqaq6"]
+
+[sub_resource type="GDScript" id="GDScript_xsx2x"]
+script/source = "extends Area2D
+
+@export
+var starting_ball_speed_pixels_per_second = 220
+
+@export
+var sync_position: Vector2
+
+var current_ball_speed_pixels_per_second = starting_ball_speed_pixels_per_second
+var initial_direction_of_ball = Vector2(-1, 0)
+var direction_of_ball = initial_direction_of_ball
+
+func is_local_authority():
+	return $Networking/MultiplayerSynchronizer.get_multiplayer_authority() == multiplayer.get_unique_id()
+
+func _ready():
+	print('ball _ready')
+	
+	# int constructor taking a string is currently broken :(
+	# https://github.com/godotengine/godot/issues/44407
+	# https://github.com/godotengine/godot/issues/55284
+	$Networking/MultiplayerSynchronizer.set_multiplayer_authority(str(name).to_int())
+	
+	signals.collision_with_paddle.connect(_on_collision_with_paddle)
+	signals.collision_with_wall.connect(_on_collision_with_wall)
+	signals.collision_with_goal.connect(_on_collision_with_goal)
+
+func _physics_process(delta):
+	if !is_local_authority():
+		position = $Networking.sync_position
+		return
+
+	# Move locally
+	# Calculate Ball's new position and update it
+	self.position += direction_of_ball * current_ball_speed_pixels_per_second * delta
+	
+	# Update sync variables, which will be replicated to everyone else
+	$Networking.sync_position = position
+
+func _on_collision_with_paddle():
+	direction_of_ball.x = -direction_of_ball.x
+	current_ball_speed_pixels_per_second *= 1.1
+	direction_of_ball.y = randf() * 2.0 - 1
+	direction_of_ball = direction_of_ball.normalized()
+
+func _on_collision_with_wall():
+	direction_of_ball.y = -direction_of_ball.y
+
+func _on_collision_with_goal():
+	var RESET_POSITION = get_viewport_rect().size * 0.5 # Ball goes to screen center
+	self.position = RESET_POSITION # Updates the server's ball position
+	$Networking.sync_position = RESET_POSITION # Updates the client's ball position
+	
+	print('ball _on_collision_with_goal moved ball back to center point of screen, at position %s' % str(self.position))
+
+	current_ball_speed_pixels_per_second = starting_ball_speed_pixels_per_second # reset ball speed
+
+	# Reverse the initial direction of the ball, alternating which player gets to serve
+	initial_direction_of_ball.x = -initial_direction_of_ball.x
+	direction_of_ball = initial_direction_of_ball
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5rc3w"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_m85u5"]
+properties/0/path = NodePath(".:sync_position")
+properties/0/spawn = true
+properties/0/sync = true
+
+[node name="Ball" type="Area2D"]
+position = Vector2(320, 200)
+collision_layer = 2
+collision_mask = 13
+script = SubResource("GDScript_xsx2x")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_m40wo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(0.4, 0.4)
+shape = SubResource("CircleShape2D_5rc3w")
+
+[node name="Networking" type="Node" parent="."]
+script = ExtResource("3_uqaq6")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Networking"]
+replication_config = SubResource("SceneReplicationConfig_m85u5")
